@@ -37,7 +37,6 @@ const (
 		plugin,
 		authentication_string,
 		password_expired,
-		password_last_changed,
 		password_lifetime,
 		account_locked
 	FROM 
@@ -46,6 +45,7 @@ const (
 		User NOT IN ('root','mysql.sys','mysql.session')
 	AND
 		Host = 'localhost'
+	LIMIT %d OFFSET %d
 	`
 
 	//create a user
@@ -250,4 +250,45 @@ func (user *Users) DeleteOneUser(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+/*
+get all users information.
+*/
+func FindAllUserInfo(db *sql.DB, limit uint64, skip uint64) ([]Users, error) {
+
+	//save users info.
+	var allusers []Users
+
+	Query := fmt.Sprintf(StmtQueryAllUsersInfo, limit, skip)
+
+	rows, err := db.Query(Query)
+	if err != nil {
+		return []Users{}, errors.Trace(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tmpuser Users
+
+		err = rows.Scan(
+			&tmpuser.Host,
+			&tmpuser.User,
+			&tmpuser.MaxQuestions,
+			&tmpuser.MaxUpdates,
+			&tmpuser.MaxConnections,
+			&tmpuser.MaxUserConnections,
+			&tmpuser.Plugin,
+			&tmpuser.AuthenticationString,
+			&tmpuser.PasswordExpired,
+			&tmpuser.PasswordLifetime,
+			&tmpuser.AccountLocked,
+		)
+		if err != nil {
+			continue
+		}
+
+		allusers = append(allusers, tmpuser)
+	}
+	return allusers, nil
 }
