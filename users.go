@@ -37,14 +37,12 @@ const (
 		plugin,
 		authentication_string,
 		password_expired,
-		password_lifetime,
+		IFNULL(password_lifetime,0),
 		account_locked
 	FROM 
 		mysql.user
 	WHERE
 		User NOT IN ('root','mysql.sys','mysql.session')
-	AND
-		Host = 'localhost'
 	LIMIT %d OFFSET %d
 	`
 
@@ -125,6 +123,13 @@ SetMaxConnections will set max connections.
 */
 func (user *Users) SetMaxConnections(max_connections uint64) {
 	user.MaxConnections = max_connections
+}
+
+/*
+set max user connections.
+*/
+func (user *Users) SetMaxUserConections(max_user_connections uint64) {
+	user.MaxUserConnections = max_user_connections
 }
 
 /*
@@ -228,14 +233,9 @@ func (user *Users) UpdateOneUser(db *sql.DB) error {
 	// Query Stmt.
 	Query := fmt.Sprintf(StmtUpdateOneUser, user.User, user.Host, user.AuthenticationString, user.MaxQuestions, user.MaxUpdates, user.MaxConnections, user.MaxUserConnections, password_option, lock_option)
 
-	result, err := db.Exec(Query)
+	_, err := db.Exec(Query)
 	if err != nil {
 		return errors.Trace(err)
-	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return errors.NotFoundf(user.User)
 	}
 
 	return nil
@@ -248,14 +248,9 @@ func (user *Users) DeleteOneUser(db *sql.DB) error {
 
 	Query := fmt.Sprintf(StmtDeleteOneUser, user.User, user.Host)
 
-	result, err := db.Exec(Query)
+	_, err := db.Exec(Query)
 	if err != nil {
 		return errors.Trace(err)
-	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return errors.NotFoundf(user.User)
 	}
 
 	return nil
@@ -275,7 +270,7 @@ func FindAllUserInfo(db *sql.DB, limit uint64, skip uint64) ([]Users, error) {
 	if err != nil {
 		return []Users{}, errors.Trace(err)
 	}
-	defer rows.Close()
+	//defer rows.Close()
 
 	for rows.Next() {
 		var tmpuser Users

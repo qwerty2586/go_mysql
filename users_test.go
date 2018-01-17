@@ -1,6 +1,9 @@
 package imSQL
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestUser(t *testing.T) {
 	conn, err := NewConn("172.18.10.111", 3306, "root", "111111")
@@ -17,10 +20,12 @@ func TestUser(t *testing.T) {
 		t.Error(db, err)
 	}
 
-	allusers, err := FindAllUserInfo(db, 1, 0)
+	allusers, err := FindAllUserInfo(db, 10, 0)
 	if err != nil {
 		t.Error(allusers, err)
 	}
+
+	fmt.Println(allusers)
 
 	newuser, err := NewUser("dev2", "dev2", "localhost")
 	if err != nil {
@@ -28,6 +33,22 @@ func TestUser(t *testing.T) {
 	}
 
 	err = newuser.AddOneUser(db)
+	if err != nil {
+		t.Error(err)
+	}
+
+	newuser.SetAccountLocked("YES")
+	newuser.SetMaxConnections(10000)
+	newuser.SetMaxUserConections(1000)
+	newuser.SetMaxQuestions(10)
+	newuser.SetMaxUpdates(2)
+
+	err = newuser.UpdateOneUser(db)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = newuser.DeleteOneUser(db)
 	if err != nil {
 		t.Error(err)
 	}
