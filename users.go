@@ -58,8 +58,8 @@ const (
 	MAX_UPDATES_PER_HOUR %d
 	MAX_CONNECTIONS_PER_HOUR %d
 	MAX_USER_CONNECTIONS %d
-	PASSWORD EXPIRE '%s'    
-	ACCOUNT '%s'
+	PASSWORD EXPIRE %s    
+	ACCOUNT %s
 	`
 
 	//alter a user
@@ -72,8 +72,8 @@ const (
 	MAX_UPDATES_PER_HOUR %d
 	MAX_CONNECTIONS_PER_HOUR %d
 	MAX_USER_CONNECTIONS %d
-	PASSWORD EXPIRE '%s'    
-	ACCOUNT '%s'
+	PASSWORD EXPIRE %s    
+	ACCOUNT %s
 	`
 
 	//delete a user
