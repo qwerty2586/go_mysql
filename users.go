@@ -1,5 +1,13 @@
 package imSQL
 
+import (
+	"database/sql"
+	"fmt"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/juju/errors"
+)
+
 type (
 	Users struct {
 		Host                 string `json:"host" db:"host"`
@@ -11,7 +19,6 @@ type (
 		Plugin               string `json:"plugin" db"plugin"`
 		AuthenticationString string `json:"authentication_string" db:"authentication_string"`
 		PasswordExpired      string `json:"password_expired" db:"password_expired"`
-		PasswordLastChanged  string `json:"password_last_changed" db:"password_last_changed"`
 		PasswordLifetime     uint64 `json:"password_lifetime" db:"password_lifetime"`
 		AccountLocked        string `json:"account_locked" db:"account_locked"`
 	}
@@ -51,7 +58,7 @@ const (
 	MAX_UPDATES_PER_HOUR %d
 	MAX_CONNECTIONS_PER_HOUR %d
 	MAX_USER_CONNECTIONS %d
-	PASSWORD EXPIRE '%s'
+	PASSWORD EXPIRE '%s'    
 	ACCOUNT '%s'
 	`
 
@@ -65,7 +72,7 @@ const (
 	MAX_UPDATES_PER_HOUR %d
 	MAX_CONNECTIONS_PER_HOUR %d
 	MAX_USER_CONNECTIONS %d
-	PASSWORD EXPIRE NEVER
+	PASSWORD EXPIRE '%s'    
 	ACCOUNT '%s'
 	`
 
@@ -74,3 +81,173 @@ const (
 	DROP USER IF EXISTS '%s'@'%s'
 	`
 )
+
+/*
+NewUser return a new user handler.
+This function have three args,other args is options.
+*/
+func NewUser(username string, password string, addr string) (*Users, error) {
+
+	newuser := new(Users)
+
+	newuser.Host = addr
+	newuser.User = username
+	newuser.AuthenticationString = password
+
+	newuser.MaxQuestions = 0
+	newuser.MaxUpdates = 0
+	newuser.MaxConnections = 0
+	newuser.MaxUserConnections = 0
+	newuser.Plugin = "mysql_native_password"
+	newuser.PasswordExpired = "N"
+	newuser.PasswordLifetime = 0
+	newuser.AccountLocked = "N"
+
+}
+
+/*
+SetMaxQuestions will set user max qps.
+*/
+func (user *Users) SetMaxQuestions(max_questions uint64) {
+	user.MaxQuestions = max_questions
+}
+
+/*
+SetMaxUpdates will set user max updates.
+*/
+func (user *Users) SetMaxUpdates(max_updates uint64) {
+	user.MaxUpdates = max_updates
+}
+
+/*
+SetMaxConnections will set max connections.
+*/
+func (user *Users) SetMaxConnections(max_connections uint64) {
+	user.MaxConnections = max_connections
+}
+
+/*
+set user password life time.
+*/
+func (user *Users) SetPasswordLifeTime(password_lifetime uint64) {
+	user.PasswordLifetime = password_lifetime
+}
+
+/*
+enable/disable user password expired.
+*/
+func (user *Users) SetPasswordExipred(password_expired string) {
+	user.PasswordExpired = password_expired
+}
+
+/*
+lock/unlock user account.
+*/
+func (user *Users) SetAccountLocked(account_locked string) {
+	user.AccountLocked = account_locked
+}
+
+/*
+add one user.
+*/
+func (user *Users) AddOneUser(db *sql.DB) error {
+	// set password expire option
+	if user.PasswordExpired == "N" {
+		switch {
+		case user.PasswordLifetime == 0:
+			password_option := fmt.Sprint("NEVER")
+		case user.PasswordExpired >= 360:
+			password_option := fmt.Sprint("DEFAULT")
+		default:
+			password_option := fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
+		}
+	} else {
+		password_option := fmt.Sprint(" ")
+	}
+
+	//set lock option.
+	if user.AccountLocked == "N" {
+		lock_option := fmt.Sprint("UNLOCK")
+	} else {
+		lock_option := fmt.Sprint("LOCK")
+
+	}
+
+	//Query Stmt.
+	Query := fmt.Sprintf(StmtAddOneUser, user.User, user.Host, user.AuthenticationString, user.MaxQuestions, user.MaxUpdates, user.MaxConnections, user.MaxUserConnections, password_option, lock_option)
+
+	_, err := db.Exec(Query)
+	if err != nil {
+		switch {
+		//user is exists.
+		case err.(*mysql.MySQLError).Number == 1045:
+			return errors.NewAlreadyExists(err, user.User)
+		default:
+			return errors.Trace(err)
+		}
+	}
+	return nil
+
+}
+
+/*
+alter user ...
+*/
+func (user *Users) UpdateOneUser(db *sql.DB) error {
+	// set password expire option
+	if user.PasswordExpired == "N" {
+		switch {
+		case user.PasswordLifetime == 0:
+			password_option := fmt.Sprint("NEVER")
+		case user.PasswordExpired >= 360:
+			password_option := fmt.Sprint("DEFAULT")
+		default:
+			password_option := fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
+		}
+	} else {
+		password_option := fmt.Sprint(" ")
+	}
+
+	//set lock option.
+	if user.AccountLocked == "N" {
+		lock_option := fmt.Sprint("UNLOCK")
+	} else {
+		lock_option := fmt.Sprint("LOCK")
+
+	}
+
+	// Query Stmt.
+	Query := fmt.Sprintf(StmtUpdateOneUser, user.User, user.Host, user.AuthenticationString, user.MaxQuestions, user.MaxUpdates, user.MaxConnections, user.MaxUserConnections, password_option, lock_option)
+
+	result, err := db.Exec(Query)
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.NotFoundf(user.User)
+	}
+
+	return nil
+}
+
+/*
+drop user.
+*/
+func (user *Users) DeleteOneUser(db *sql.DB) error {
+
+	Query := fmt.Sprintf(StmtDeleteOneUser, user.User, user.Host)
+
+	result, err := db.Exec(Query)
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.NotFoundf(user.User)
+	}
+
+	return nil
+}
