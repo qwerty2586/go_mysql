@@ -103,6 +103,7 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.PasswordLifetime = 0
 	newuser.AccountLocked = "N"
 
+	return newuser, nil
 }
 
 /*
@@ -151,25 +152,29 @@ func (user *Users) SetAccountLocked(account_locked string) {
 add one user.
 */
 func (user *Users) AddOneUser(db *sql.DB) error {
+
+	var password_option string
+	var lock_option string
+
 	// set password expire option
 	if user.PasswordExpired == "N" {
 		switch {
 		case user.PasswordLifetime == 0:
-			password_option := fmt.Sprint("NEVER")
-		case user.PasswordExpired >= 360:
-			password_option := fmt.Sprint("DEFAULT")
+			password_option = fmt.Sprint("NEVER")
+		case user.PasswordLifetime >= 360:
+			password_option = fmt.Sprint("DEFAULT")
 		default:
-			password_option := fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
+			password_option = fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
 		}
 	} else {
-		password_option := fmt.Sprint(" ")
+		password_option = fmt.Sprint(" ")
 	}
 
 	//set lock option.
 	if user.AccountLocked == "N" {
-		lock_option := fmt.Sprint("UNLOCK")
+		lock_option = fmt.Sprint("UNLOCK")
 	} else {
-		lock_option := fmt.Sprint("LOCK")
+		lock_option = fmt.Sprint("LOCK")
 
 	}
 
@@ -194,25 +199,29 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 alter user ...
 */
 func (user *Users) UpdateOneUser(db *sql.DB) error {
+
+	var password_option string
+	var lock_option string
+
 	// set password expire option
 	if user.PasswordExpired == "N" {
 		switch {
 		case user.PasswordLifetime == 0:
-			password_option := fmt.Sprint("NEVER")
-		case user.PasswordExpired >= 360:
-			password_option := fmt.Sprint("DEFAULT")
+			password_option = fmt.Sprint("NEVER")
+		case user.PasswordLifetime >= 360:
+			password_option = fmt.Sprint("DEFAULT")
 		default:
-			password_option := fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
+			password_option = fmt.Sprintf("INTERVAL %d DAY", user.PasswordLifetime)
 		}
 	} else {
-		password_option := fmt.Sprint(" ")
+		password_option = fmt.Sprint(" ")
 	}
 
 	//set lock option.
 	if user.AccountLocked == "N" {
-		lock_option := fmt.Sprint("UNLOCK")
+		lock_option = fmt.Sprint("UNLOCK")
 	} else {
-		lock_option := fmt.Sprint("LOCK")
+		lock_option = fmt.Sprint("LOCK")
 
 	}
 

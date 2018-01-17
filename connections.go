@@ -22,7 +22,16 @@ type (
 )
 
 func NewConn(addr string, port uint64, user string, password string) (*Conn, error) {
+	imsql := new(Conn)
+	imsql.Addr = addr
+	imsql.Port = port
+	imsql.User = user
+	imsql.Password = password
+	imsql.Database = "information_schema"
+	imsql.Charset = "utf8"
+	imsql.Collation = "utf8_general_ci"
 
+	return imsql, nil
 }
 
 func (imsql *Conn) SetCharset(charset string) {
@@ -34,10 +43,11 @@ func (imsql *Conn) SetCollation(collation string) {
 }
 
 func (imsql *Conn) MakeDBI() {
-	imsq.DBI = fmt.Sprintf("%s:%s@tcp(%s:%d)g%s?charset=%s?collation=%s", imsql.User, imsql.Password, imsql.Addr, imsql.Port, imsql.Database, imsql.Charset, imsql.Collation)
+	imsql.DBI = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&collation=%s", imsql.User, imsql.Password, imsql.Addr, imsql.Port, imsql.Database, imsql.Charset, imsql.Collation)
 }
 
 func (imsql *Conn) OpenConn() (*sql.DB, error) {
+
 	db, err := sql.Open("mysql", imsql.DBI)
 	if err != nil {
 		return nil, errors.Trace(err)
