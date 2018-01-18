@@ -21,6 +21,7 @@ const (
 
 var (
 	// global or session variables.
+	// https://dev.mysql.com/doc/refman/5.7/en/dynamic-system-variables.html
 	GlobalDynamicVars = map[string]string{
 		"audit_log_connection_policy":                     "audit_log_connection_policy",
 		"audit_log_exclude_accounts":                      "audit_log_exclude_accounts",
