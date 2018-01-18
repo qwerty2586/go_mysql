@@ -9,8 +9,9 @@ import (
 
 type (
 	Variable struct {
-		Name  string `json:"Variable_name" db:"Variable_name"`
-		Value string `json:"Value" db:"Value"`
+		Name    string `json:"Variable_name" db:"Variable_name"`
+		Value   string `json:"Value" db:"Value"`
+		Dynamic string `json:"Dynamic" db:"Dynamic"`
 	}
 )
 
@@ -520,6 +521,12 @@ func ShowVariables(db *sql.DB) ([]Variable, error) {
 			&tmpvar.Name,
 			&tmpvar.Value,
 		)
+
+		if _, varvalue := GlobalDynamicVars[tmpvar.Name]; varvalue {
+			tmpvar.Dynamic = "Yes"
+		} else {
+			tmpvar.Dynamic = "No"
+		}
 
 		if err != nil {
 			continue
