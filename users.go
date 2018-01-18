@@ -25,6 +25,27 @@ type (
 )
 
 const (
+	//get one user info.
+	StmtQueryOneUserInfo = `
+	SELECT 
+		Host,
+		User,
+		max_questions,
+		max_updates,
+		max_connections,
+		max_user_connections,
+		plugin,
+		authentication_string,
+		password_expired,
+		IFNULL(password_lifetime,0),
+		account_locked
+	FROM 
+		mysql.user
+	WHERE
+		User = '%s'
+	AND
+		Host = '%s'
+	`
 	//get all users infor.
 	StmtQueryAllUsersInfo = `
 	SELECT 
@@ -102,6 +123,19 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.AccountLocked = "N"
 
 	return newuser, nil
+}
+
+/*
+set user password
+*/
+func (user *Users) SetPassword(password string) {
+	switch {
+	case password == "":
+		user.AuthenticationString = password
+	default:
+		user.AuthenticationString = password
+
+	}
 }
 
 /*
@@ -254,6 +288,43 @@ func (user *Users) DeleteOneUser(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+/*
+get one user information.
+*/
+func (user *Users) FindOneUserInfo(db *sql.DB) (Users, error) {
+
+	var tmpuser Users
+	Query := fmt.Sprintf(StmtQueryOneUserInfo, user.User, user.Host)
+
+	rows, err := db.Query(Query)
+	if err != nil {
+		return Users{}, errors.Trace(err)
+	}
+	//defer rows.Close()
+
+	for rows.Next() {
+
+		err = rows.Scan(
+			&tmpuser.Host,
+			&tmpuser.User,
+			&tmpuser.MaxQuestions,
+			&tmpuser.MaxUpdates,
+			&tmpuser.MaxConnections,
+			&tmpuser.MaxUserConnections,
+			&tmpuser.Plugin,
+			&tmpuser.AuthenticationString,
+			&tmpuser.PasswordExpired,
+			&tmpuser.PasswordLifetime,
+			&tmpuser.AccountLocked,
+		)
+		if err != nil {
+			continue
+		}
+
+	}
+	return tmpuser, nil
 }
 
 /*

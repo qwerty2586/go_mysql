@@ -37,6 +37,12 @@ func TestUser(t *testing.T) {
 		t.Error(err)
 	}
 
+	usr, err := newuser.FindOneUserInfo(db)
+	if err != nil {
+		t.Error(usr, err)
+	}
+	fmt.Println(usr)
+
 	newuser.SetAccountLocked("YES")
 	newuser.SetMaxConnections(10000)
 	newuser.SetMaxUserConections(1000)
