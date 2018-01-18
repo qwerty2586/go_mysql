@@ -3,6 +3,7 @@ package imSQL
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/juju/errors"
 )
@@ -11,7 +12,7 @@ type (
 	Variable struct {
 		Name    string `json:"Variable_name" db:"Variable_name"`
 		Value   string `json:"Value" db:"Value"`
-		Type string `json:"Type" db:"Type"`
+		Type    string `json:"Type" db:"Type"`
 		Dynamic string `json:"Dynamic" db:"Dynamic"`
 	}
 )
@@ -524,7 +525,7 @@ func ShowVariables(db *sql.DB) ([]Variable, error) {
 			&tmpvar.Value,
 		)
 
-		if val, ok:= GlobalDynamicVars[tmpvar.Name]; ok{
+		if val, ok := GlobalDynamicVars[tmpvar.Name]; ok {
 			tmpvar.Dynamic = "Yes"
 			tmpvar.Type = val
 		} else {
@@ -553,16 +554,22 @@ func SetDynamicVariables(db *sql.DB, variable_name string, variable_value string
 
 	switch {
 	case varvalue == "integer":
+		_, err := strconv.Atoi(variable_value)
+		if err != nil {
+			return errors.NewNotValid(err, variable_value)
+		}
 		Query = fmt.Sprintf(StmtSetIntegerDynamicVariables, variable_name, variable_value)
 	case varvalue == "boolean":
-		if variable_value == "ON" || variable_value == "True" || variable_value == "true" || variable_value == "TRUE" || variable_value == "on" || variable_value == "On" || variable_value == "1" {
+		switch {
+		case variable_value == "ON" || variable_value == "True" || variable_value == "true" || variable_value == "TRUE" || variable_value == "on" || variable_value == "On" || variable_value == "1":
 			Query = fmt.Sprintf(StmtSetStringDynamicVariables, variable_name, "ON")
-		} else {
+		case variable_value == "OFF" || variable_value == "False" || variable_value == "false" || variable_value == "FALSE" || variable_value == "off" || variable_value == "Off" || variable_value == "0":
 			Query = fmt.Sprintf(StmtSetStringDynamicVariables, variable_name, "OFF")
+		default:
+			return errors.NotValidf("%s", variable_value)
 		}
 	default:
 		Query = fmt.Sprintf(StmtSetStringDynamicVariables, variable_name, variable_value)
-
 	}
 
 	_, err := db.Exec(Query)
