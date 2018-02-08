@@ -1,12 +1,14 @@
 package imSQL
 
 import (
+	"flag"
 	"fmt"
 	"testing"
 )
 
 func TestUser(t *testing.T) {
-	conn, err := NewConn("172.18.10.111", 3306, "root", "111111")
+	flag.Parse()
+	conn, err := NewConn(*mysql_addr, *mysql_port, *mysql_user, *mysql_pass)
 	if err != nil {
 		t.Error(conn, err)
 	}
