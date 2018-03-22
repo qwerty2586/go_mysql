@@ -15,7 +15,13 @@ export MYSQL_PASS="111111"
 go test -timeout 30m -v -test.run TestNewConn
 
 # Test users.
-go test -timeout 30m -v -test.run TestUser
+go test -timeout 30m -v -test.run TestQueryAllUsers
+go test -timeout 30m -v -test.run TestCreateOneUser
+go test -timeout 30m -v -test.run TestQueryAllUsers
+go test -timeout 30m -v -test.run TestUpdateOneUser
+go test -timeout 30m -v -test.run TestQueryAllUsers
+go test -timeout 30m -v -test.run TestDeleteOneUser
+go test -timeout 30m -v -test.run TestQueryAllUsers
 
 # Test variables.
 go test -timeout 30m -v -test.run TestVars

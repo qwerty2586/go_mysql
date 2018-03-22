@@ -27,4 +27,9 @@ func TestNewConn(t *testing.T) {
 	if err != nil {
 		t.Error(db, err)
 	}
+
+	err = conn.CloseConn(db)
+	if err != nil {
+		t.Error(err)
+	}
 }
