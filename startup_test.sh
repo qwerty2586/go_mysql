@@ -24,4 +24,8 @@ go test -timeout 30m -v -test.run TestDeleteOneUser
 go test -timeout 30m -v -test.run TestQueryAllUsers
 
 # Test variables.
-go test -timeout 30m -v -test.run TestVars
+go test -timeout 30m -v -test.run TestQueryAllVars
+go test -timeout 30m -v -test.run TestUpdateOneVars
+go test -timeout 30m -v -test.run TestQueryAllVars
+go test -timeout 30m -v -test.run TestUpdateOneNotExistsVars
+go test -timeout 30m -v -test.run TestQueryAllVars
