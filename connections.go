@@ -59,3 +59,10 @@ func (imsql *Conn) OpenConn() (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+func (imsql *Conn) CloseConn(db *sql.DB) error {
+	err := db.Close()
+	if err != nil {
+		return errors.Trace(err)
+	}
+}

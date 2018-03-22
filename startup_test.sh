@@ -6,4 +6,16 @@
 #########################################################################
 #!/bin/bash
 
-go test --args -addr 172.18.10.136 -port 9136 -user root -pass 111111
+export MYSQL_ADDR="172.18.10.136"
+export MYSQL_PORT=3306
+export MYSQL_USER="root"
+export MYSQL_PASS="111111"
+
+# Test connections.
+go test -timeout 30m -v -test.run TestNewConn
+
+# Test users.
+go test -timeout 30m -v -test.run TestUser
+
+# Test variables.
+go test -timeout 30m -v -test.run TestVars

@@ -8,7 +8,7 @@ import (
 
 func TestUser(t *testing.T) {
 	flag.Parse()
-	conn, err := NewConn(*mysql_addr, *mysql_port, *mysql_user, *mysql_pass)
+	conn, err := NewConn(mysql_addr, mysql_port, mysql_user, mysql_pass)
 	if err != nil {
 		t.Error(conn, err)
 	}
