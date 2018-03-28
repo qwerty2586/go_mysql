@@ -3,6 +3,8 @@ package imSQL
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/juju/errors"
@@ -101,6 +103,12 @@ const (
 	//delete a user
 	StmtDeleteOneUser = `
 	DROP USER IF EXISTS '%s'@'%s'
+	`
+	StmtFlushPrivileges = `
+	FLUSH PRIVILEGES
+	`
+	StmtGrantPrivileges = `
+	GRANT %s ON %s.* TO '%s'@'%s'
 	`
 )
 
@@ -211,6 +219,13 @@ func (user *Users) AddPrivileges(privileges ...string) {
 }
 
 /*
+set user't default schema.
+*/
+func (user *Users) SetDefaultSchema(default_schema string) {
+	user.DefaultSchema = default_schema
+}
+
+/*
 add one user.
 */
 func (user *Users) AddOneUser(db *sql.DB) error {
@@ -252,6 +267,20 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 		default:
 			return errors.Trace(err)
 		}
+	}
+
+	PrivList := strings.Join(user.Privileges, ",")
+	GrantQuery := fmt.Sprintf(StmtGrantPrivileges, PrivList, user.DefaultSchema, user.User, user.Host)
+
+	log.Println(GrantQuery)
+	_, err = db.Exec(GrantQuery)
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	_, err = db.Exec(StmtFlushPrivileges)
+	if err != nil {
+		return errors.Trace(err)
 	}
 	return nil
 
