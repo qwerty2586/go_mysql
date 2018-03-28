@@ -13,6 +13,7 @@ type (
 		Host                 string   `json:"host" db:"host"`
 		User                 string   `json:"username" db:"user"`
 		Active               uint64   `json:"active" db:"active"`
+		DefaultSchema        string   `json:"default_schema" db:"default_schema"`
 		MaxQuestions         uint64   `json:"max_questions" db:"max_questions"`
 		MaxUpdates           uint64   `json:"max_updates" db:"max_updates"`
 		MaxConnections       uint64   `json:"max_connections" db:"max_connections"`
@@ -115,6 +116,7 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.User = username
 	newuser.AuthenticationString = password
 
+	newuser.DefaultSchema = "information_schema"
 	newuser.MaxQuestions = 0
 	newuser.MaxUpdates = 0
 	newuser.MaxConnections = 0
