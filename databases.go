@@ -16,7 +16,7 @@ type (
 const (
 	/*Create one database*/
 	StmtCreateOneDatabase = `
-	CREATE DATABASE %s DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci
+	CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci
 	`
 
 	/*Drop a database.*/
