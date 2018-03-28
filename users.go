@@ -10,17 +10,19 @@ import (
 
 type (
 	Users struct {
-		Host                 string `json:"host" db:"host"`
-		User                 string `json:"user" db:"user"`
-		MaxQuestions         uint64 `json:"max_questions" db:"max_questions"`
-		MaxUpdates           uint64 `json:"max_updates" db:"max_updates"`
-		MaxConnections       uint64 `json:"max_connections" db:"max_connections"`
-		MaxUserConnections   uint64 `json:"max_user_connections" db:"max_user_connections"`
-		Plugin               string `json:"plugin" db"plugin"`
-		AuthenticationString string `json:"authentication_string" db:"authentication_string"`
-		PasswordExpired      string `json:"password_expired" db:"password_expired"`
-		PasswordLifetime     uint64 `json:"password_lifetime" db:"password_lifetime"`
-		AccountLocked        string `json:"account_locked" db:"account_locked"`
+		Host                 string   `json:"host" db:"host"`
+		User                 string   `json:"username" db:"user"`
+		Active               uint64   `json:"active" db:"active"`
+		MaxQuestions         uint64   `json:"max_questions" db:"max_questions"`
+		MaxUpdates           uint64   `json:"max_updates" db:"max_updates"`
+		MaxConnections       uint64   `json:"max_connections" db:"max_connections"`
+		MaxUserConnections   uint64   `json:"max_user_connections" db:"max_user_connections"`
+		Plugin               string   `json:"plugin" db"plugin"`
+		AuthenticationString string   `json:"password" db:"authentication_string"`
+		PasswordExpired      string   `json:"password_expired" db:"password_expired"`
+		PasswordLifetime     uint64   `json:"password_lifetime" db:"password_lifetime"`
+		AccountLocked        string   `json:"account_locked" db:"account_locked"`
+		Privileges           []string `json:"privileges" db:"privileges"`
 	}
 )
 
@@ -121,6 +123,7 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.PasswordExpired = "N"
 	newuser.PasswordLifetime = 0
 	newuser.AccountLocked = "N"
+	newuser.Privileges = []string{"ALL PRIVILEGES"}
 
 	return newuser, nil
 }
@@ -183,8 +186,26 @@ func (user *Users) SetPasswordExipred(password_expired string) {
 /*
 lock/unlock user account.
 */
-func (user *Users) SetAccountLocked(account_locked string) {
-	user.AccountLocked = account_locked
+func (user *Users) SetAccountLocked(active uint64) {
+	if active == 0 {
+		user.AccountLocked = "Y"
+	} else {
+		user.AccountLocked = "N"
+	}
+}
+
+/*
+add user's privileges
+*/
+func (user *Users) AddPrivileges(privileges ...string) {
+	if len(privileges) != 0 {
+		if user.Privileges[0] == "ALL PRIVILEGES" {
+			user.Privileges = []string{}
+			user.Privileges = append(user.Privileges, privileges...)
+		} else {
+			user.Privileges = append(user.Privileges, privileges...)
+		}
+	}
 }
 
 /*
