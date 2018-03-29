@@ -9,7 +9,9 @@ import (
 
 type (
 	DB struct {
-		Name string `json:"name" db:"name"`
+		Name                 string `json:"name" db:"name"`
+		DefaultCharacterSet  string `json:"default_character_set_name" db:"default_character_set_name"`
+		DefaultCollationName string `json:"default_collation_name" db:"default_collation_name"`
 	}
 )
 
@@ -24,8 +26,13 @@ const (
 	DROP DATABASE %s	
 	`
 
+	/*Query user's database*/
 	StmtQueryUsersDB = `
 	SELECT Db FROM mysql.db WHERE User = '%s'
+	`
+	/*Query all databases.*/
+	StmtQueryAllDB = `
+	SELECT schema_name,default_character_set_name,default_collation_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema','performance_schema','sys','mysql')
 	`
 )
 
@@ -36,6 +43,8 @@ func NewDB(name string) (*DB, error) {
 	newdb := new(DB)
 
 	newdb.Name = name
+	newdb.DefaultCharacterSet = "utf8"
+	newdb.DefaultCollationName = "utf8_general_ci"
 
 	return newdb, nil
 }
