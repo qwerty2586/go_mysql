@@ -3,7 +3,6 @@ package imSQL
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -272,7 +271,6 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 	PrivList := strings.Join(user.Privileges, ",")
 	GrantQuery := fmt.Sprintf(StmtGrantPrivileges, PrivList, user.DefaultSchema, user.User, user.Host)
 
-	log.Println(GrantQuery)
 	_, err = db.Exec(GrantQuery)
 	if err != nil {
 		return errors.Trace(err)
