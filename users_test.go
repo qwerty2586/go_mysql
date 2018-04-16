@@ -51,7 +51,7 @@ func TestUpdateOneUser(t *testing.T) {
 		t.Error(newuser, err)
 	}
 
-	newuser.SetAccountLocked("YES")
+	newuser.SetAccountLocked(1)
 	newuser.SetMaxConnections(10000)
 	newuser.SetMaxUserConections(1000)
 	newuser.SetMaxQuestions(10)
