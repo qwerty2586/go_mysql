@@ -1,5 +1,13 @@
 package imSQL
 
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+
+	"github.com/juju/errors"
+)
+
 type (
 	// show master status
 	Master struct {
@@ -75,4 +83,206 @@ func NewSlave(host string, port uint64, username string, password string, filena
 	slave.IgnoreServerIds = []string{}
 
 	return slave, nil
+}
+
+// set master bind
+func (slave *Slave) SetMasterBind(master_bind string) {
+	slave.MasterBind = master_bind
+}
+
+// set master connect retry
+func (slave *Slave) SetMasterConnectRetry(master_connect_retry uint64) {
+	slave.MasterConnectRetry = master_connect_retry
+}
+
+// set master retry count
+func (slave *Slave) SetMasterRetryCount(master_retry_count uint64) {
+	slave.MasterRetryCount = master_retry_count
+}
+
+// set master delay
+func (slave *Slave) SetMasterDelay(master_delay uint64) {
+	slave.MasterDelay = master_delay
+}
+
+// set master heartbeat period
+func (slave *Slave) SetMasterHeartbeatPeriod(master_heartbeat_period uint64) {
+	slave.MasterHeartbeatPeriod = master_heartbeat_period
+}
+
+// set master auto position
+func (slave *Slave) SetMasterAutoPosition(auto bool) {
+	if auto {
+		slave.MasterAutoPosition = 1
+	} else {
+		slave.MasterAutoPosition = 0
+	}
+}
+
+// set relay log file
+func (slave *Slave) SetRelayLogFile(relay_log_file string) {
+	slave.RelayLogFile = relay_log_file
+}
+
+// set relay log pos
+func (slave *Slave) SetRelayLogPos(relay_log_pos uint64) {
+	slave.RelayLogPos = relay_log_pos
+}
+
+// set master ssl
+func (slave *Slave) SetMasterSSL(ssl bool) {
+	if ssl {
+		slave.MasterSSL = 1
+	} else {
+		slave.MasterSSL = 0
+	}
+}
+
+// set master ssl ca
+func (slave *Slave) SetMasterSSLCa(master_ca string) {
+	slave.MasterSSLCa = master_ca
+}
+
+// set master ssl capath
+func (slave *Slave) SetMasterSSLCaPath(capath string) {
+	slave.MasterSSLCapath = capath
+}
+
+// set master ssl cert
+func (slave *Slave) SetMasterSSLCert(cert string) {
+	slave.MasterSSLCert = cert
+}
+
+// set master ssl crl
+func (slave *Slave) SetMasterSSLCrl(crl string) {
+	slave.MasterSSLCrl = crl
+}
+
+// set master ssl crlpath
+func (slave *Slave) SetMasterSSLCrlPath(crlpath string) {
+	slave.MasterSSLCrlpath = crlpath
+}
+
+// set master ssl key
+func (slave *Slave) SetMasterSSLKey(key string) {
+	slave.MasterSSLKey = key
+}
+
+// set master ssl cipher
+func (slave *Slave) SetMasterSSLCipher(cipher string) {
+	slave.MasterSSLCipher = cipher
+}
+
+// set master ssl verify server cert
+func (slave *Slave) SetMasterSSLVerifyServerCert(verify bool) {
+	if verify {
+		slave.MasterSSLVerifyServerCert = 1
+	} else {
+		slave.MasterSSLVerifyServerCert = 0
+	}
+}
+
+// set master tls version
+func (slave *Slave) SetMasterTlsVersion(version string) {
+	slave.MasterTLSVersion = version
+}
+
+// set ignore ids
+func (slave *Slave) SetIgnoreIds(ids ...string) {
+	slave.IgnoreServerIds = append(slave.IgnoreServerIds, ids...)
+}
+
+func (slave *Slave) ChangeMaster(db *sql.DB) error {
+
+	// define args
+	args := make([]string, 0, 50)
+
+	args = append(args, fmt.Sprintf("MASTER_HOST='%s'", slave.MasterHost))
+	args = append(args, fmt.Sprintf("MASTER_PORT=%d", slave.MasterPort))
+	args = append(args, fmt.Sprintf("MASTER_USER='%s'", slave.MasterUser))
+	args = append(args, fmt.Sprintf("MASTER_PASSWORD='%s'", slave.MasterPassword))
+	args = append(args, fmt.Sprintf("MASTER_LOG_FILE='%s'", slave.MasterLogFile))
+	args = append(args, fmt.Sprintf("MASTER_LOG_POS=%d", slave.MasterLogPos))
+
+	args = append(args, fmt.Sprintf("MASTER_BIND='%s'", slave.MasterBind))
+
+	if slave.MasterConnectRetry != 0 {
+		args = append(args, fmt.Sprintf("MASTER_CONNECT_RETR=%d", slave.MasterConnectRetry))
+	}
+
+	if slave.MasterRetryCount != 0 {
+		args = append(args, fmt.Sprintf("MASTER_RETRY_COUNT=%d", slave.MasterRetryCount))
+	}
+
+	if slave.MasterDelay != 0 {
+		args = append(args, fmt.Sprintf("MASTER_DELAY=%d", slave.MasterDelay))
+	}
+
+	if slave.MasterHeartbeatPeriod != 0 {
+		args = append(args, fmt.Sprintf("MASTER_HEARTBEAT_PERIOD=%d", slave.MasterHeartbeatPeriod))
+	}
+
+	if slave.MasterAutoPosition == 1 {
+		args = append(args, fmt.Sprintf("MASTER_AUTO_POSITION=1"))
+	}
+
+	if len(slave.RelayLogFile) != 0 {
+		args = append(args, fmt.Sprintf("RELAY_LOG_FILE='%s'", slave.RelayLogFile))
+	}
+
+	if slave.RelayLogPos != 0 {
+		args = append(args, fmt.Sprintf("RELAY_LOG_POS=%d", slave.RelayLogPos))
+	}
+
+	if slave.MasterSSL == 1 {
+		args = append(args, fmt.Sprintf("MASTER_SSL=1"))
+	}
+
+	if len(slave.MasterSSLCa) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_CA='%s'", slave.MasterSSLCa))
+	}
+
+	if len(slave.MasterSSLCapath) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_CAPATH='%s'", slave.MasterSSLCapath))
+	}
+
+	if len(slave.MasterSSLCert) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_CERT='%s'", slave.MasterSSLCert))
+	}
+
+	if len(slave.MasterSSLCrl) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_CRL='%s'", slave.MasterSSLCert))
+	}
+
+	if len(slave.MasterSSLCrlpath) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.SetMasterSSLKey))
+	}
+
+	if len(slave.MasterSSLKey) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.SetMasterSSLKey))
+	}
+
+	if len(slave.MasterSSLCipher) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_CIPHER='%s'", slave.MasterSSLCipher))
+	}
+
+	if slave.MasterSSLVerifyServerCert != 0 {
+		args = append(args, fmt.Sprintf("MASTER_SSL_VERIFY_SERVER_CERT=%d", slave.MasterSSLVerifyServerCert))
+	}
+
+	if len(slave.MasterTLSVersion) != 0 {
+		args = append(args, fmt.Sprintf("MASTER_TLS_VERSION='%s'", slave.MasterTLSVersion))
+	}
+
+	if len(slave.IgnoreServerIds) != 0 {
+		args = append(args, fmt.Sprintf("IGNORE_SERVER_IDS='%s'", strings.Join(slave.IgnoreServerIds, ",")))
+	}
+
+	ChangeMaster := fmt.Sprintf("CHANGE MASTER TO %s", strings.Join(args, ","))
+
+	_, err := db.Exec(ChangeMaster)
+	if err != nil {
+		return errors.Trace(err)
+	}
+	return nil
 }
