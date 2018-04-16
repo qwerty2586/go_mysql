@@ -9,14 +9,7 @@ import (
 )
 
 type (
-	// show master status
-	Master struct {
-		File           string `json:"file" db:"file"`
-		Position       uint64 `json:"position" db:"position"`
-		BinlogDoDb     string `json:"binlog_do_db" db:"binlog_do_db"`
-		BinlogIgnoreDb string `json:"binlog_ignore_db" db:"binlog_ignore_db"`
-		ExecutedGTID   string `json:"executed_gtid_set" db:"executed_gtid_set"`
-	}
+
 	// change master to
 	Slave struct {
 		MasterBind                string   `json:"master_bind" db:"master_bind"`
