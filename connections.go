@@ -1,11 +1,9 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"database/sql"
 	"fmt"
-
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/juju/errors"
 )
 
 type (
@@ -55,12 +53,12 @@ func (imsql *Conn) OpenConn() (*sql.DB, error) {
 
 	db, err := sql.Open("mysql", imsql.DBI)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	err = db.Ping()
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 	return db, nil
 }
@@ -69,7 +67,7 @@ func (imsql *Conn) OpenConn() (*sql.DB, error) {
 func (imsql *Conn) CloseConn(db *sql.DB) error {
 	err := db.Close()
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	return nil
 }

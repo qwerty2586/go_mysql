@@ -1,12 +1,9 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
-
-	"github.com/go-sql-driver/mysql"
-	"github.com/juju/errors"
 )
 
 type (
@@ -259,13 +256,7 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 
 	_, err := db.Exec(Query)
 	if err != nil {
-		switch {
-		//user is exists.
-		case err.(*mysql.MySQLError).Number == 1045:
-			return errors.NewAlreadyExists(err, user.User)
-		default:
-			return errors.Trace(err)
-		}
+		return err
 	}
 
 	PrivList := strings.Join(user.Privileges, ",")
@@ -273,12 +264,12 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 
 	_, err = db.Exec(GrantQuery)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 
 	_, err = db.Exec(StmtFlushPrivileges)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	return nil
 
@@ -319,7 +310,7 @@ func (user *Users) UpdateOneUser(db *sql.DB) error {
 
 	_, err := db.Exec(Query)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 
 	return nil
@@ -334,7 +325,7 @@ func (user *Users) DeleteOneUser(db *sql.DB) error {
 
 	_, err := db.Exec(Query)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 
 	return nil
@@ -350,7 +341,7 @@ func (user *Users) FindOneUserInfo(db *sql.DB) (Users, error) {
 
 	rows, err := db.Query(Query)
 	if err != nil {
-		return Users{}, errors.Trace(err)
+		return Users{}, err
 	}
 	//defer rows.Close()
 
@@ -389,7 +380,7 @@ func FindAllUserInfo(db *sql.DB, limit uint64, skip uint64) ([]Users, error) {
 
 	rows, err := db.Query(Query)
 	if err != nil {
-		return []Users{}, errors.Trace(err)
+		return []Users{}, err
 	}
 	//defer rows.Close()
 

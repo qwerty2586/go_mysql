@@ -1,11 +1,10 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
-
-	"github.com/juju/errors"
 )
 
 type (
@@ -27,93 +26,93 @@ var (
 	// global or session variables.
 	// https://dev.mysql.com/doc/refman/5.7/en/dynamic-system-variables.html
 	GlobalDynamicVars = map[string]string{
-		"audit_log_connection_policy":                     "enumeration",
-		"audit_log_exclude_accounts":                      "string",
-		"audit_log_flush":                                 "boolean",
-		"audit_log_include_accounts":                      "string",
-		"audit_log_rotate_on_size":                        "integer",
-		"audit_log_statement_policy":                      "enumeration",
-		"authentication_ldap_sasl_auth_method_name":       "string",
-		"authentication_ldap_sasl_bind_base_dn":           "string",
-		"authentication_ldap_sasl_bind_root_dn":           "string",
-		"authentication_ldap_sasl_bind_root_pwd":          "string",
-		"authentication_ldap_sasl_ca_path":                "string",
-		"authentication_ldap_sasl_group_search_attr":      "string",
-		"authentication_ldap_sasl_group_search_filter":    "string",
-		"authentication_ldap_sasl_init_pool_size":         "integer",
-		"authentication_ldap_sasl_log_status":             "integer",
-		"authentication_ldap_sasl_max_pool_size":          "integer",
-		"authentication_ldap_sasl_server_host":            "string",
-		"authentication_ldap_sasl_server_port":            "integer",
-		"authentication_ldap_sasl_tls":                    "boolean",
-		"authentication_ldap_sasl_user_search_attr":       "string",
-		"authentication_ldap_simple_auth_method_name":     "string",
-		"authentication_ldap_simple_bind_base_dn":         "string",
-		"authentication_ldap_simple_bind_root_dn":         "string",
-		"authentication_ldap_simple_bind_root_pwd":        "string",
-		"authentication_ldap_simple_ca_path":              "string",
-		"authentication_ldap_simple_group_search_attr":    "string",
-		"authentication_ldap_simple_group_search_filter":  "string",
-		"authentication_ldap_simple_init_pool_size":       "integer",
-		"authentication_ldap_simple_log_status":           "integer",
-		"authentication_ldap_simple_max_pool_size":        "integer",
-		"authentication_ldap_simple_server_host":          "string",
-		"authentication_ldap_simple_server_port":          "integer",
-		"authentication_ldap_simple_tls":                  "boolean",
-		"authentication_ldap_simple_user_search_attr":     "string",
-		"auto_increment_increment":                        "integer",
-		"auto_increment_offset":                           "integer",
-		"autocommit":                                      "boolean",
-		"automatic_sp_privileges":                         "boolean",
-		"avoid_temporal_upgrade":                          "boolean",
-		"big_tables":                                      "boolean",
-		"binlog_cache_size":                               "integer",
-		"binlog_checksum":                                 "string",
-		"binlog_direct_non_transactional_updates":         "boolean",
-		"binlog_error_action":                             "enumeration",
-		"binlog_format":                                   "enumeration",
-		"binlog_group_commit_sync_delay":                  "integer",
-		"binlog_group_commit_sync_no_delay_count":         "integer",
-		"binlog_max_flush_queue_time":                     "integer",
-		"binlog_order_commits":                            "boolean",
-		"binlog_row_image=image_type":                     "enumeration",
-		"binlog_rows_query_log_events":                    "boolean",
-		"binlog_stmt_cache_size":                          "integer",
-		"binlogging_impossible_mode":                      "enumeration",
-		"block_encryption_mode":                           "string",
-		"bulk_insert_buffer_size":                         "integer",
-		"character_set_client":                            "string",
-		"character_set_connection":                        "string",
-		"character_set_database":                          "string",
-		"character_set_filesystem":                        "string",
-		"character_set_results":                           "string",
-		"character_set_server":                            "string",
-		"check_proxy_users":                               "boolean",
-		"collation_connection":                            "string",
-		"collation_database":                              "string",
-		"collation_server":                                "string",
-		"completion_type":                                 "enumeration",
-		"concurrent_insert":                               "enumeration",
-		"connect_timeout":                                 "integer",
-		"connection_control_failed_connections_threshold": "integer",
-		"connection_control_max_connection_delay":         "integer",
-		"connection_control_min_connection_delay":         "integer",
-		"default_password_lifetime":                       "integer",
-		"default_storage_engine":                          "enumeration",
-		"default_tmp_storage_engine":                      "enumeration",
-		"default_week_format":                             "integer",
-		"delay_key_write":                                 "enumeration",
-		"delayed_insert_limit":                            "integer",
-		"delayed_insert_timeout":                          "integer",
-		"delayed_queue_size":                              "integer",
-		"div_precision_increment":                         "integer",
-		"end_markers_in_json":                             "boolean",
-		"enforce_gtid_consistency":                        "enumeration",
-		"eq_range_index_dive_limit":                       "integer",
-		"event_scheduler":                                 "enumeration",
-		"executed_gtids_compression_period":               "integer",
-		"expire_logs_days":                                "integer",
-		"explicit_defaults_for_timestamp":                 "boolean",
+		"audit_log_connection_policy":                        "enumeration",
+		"audit_log_exclude_accounts":                         "string",
+		"audit_log_flush":                                    "boolean",
+		"audit_log_include_accounts":                         "string",
+		"audit_log_rotate_on_size":                           "integer",
+		"audit_log_statement_policy":                         "enumeration",
+		"authentication_ldap_sasl_auth_method_name":          "string",
+		"authentication_ldap_sasl_bind_base_dn":              "string",
+		"authentication_ldap_sasl_bind_root_dn":              "string",
+		"authentication_ldap_sasl_bind_root_pwd":             "string",
+		"authentication_ldap_sasl_ca_path":                   "string",
+		"authentication_ldap_sasl_group_search_attr":         "string",
+		"authentication_ldap_sasl_group_search_filter":       "string",
+		"authentication_ldap_sasl_init_pool_size":            "integer",
+		"authentication_ldap_sasl_log_status":                "integer",
+		"authentication_ldap_sasl_max_pool_size":             "integer",
+		"authentication_ldap_sasl_server_host":               "string",
+		"authentication_ldap_sasl_server_port":               "integer",
+		"authentication_ldap_sasl_tls":                       "boolean",
+		"authentication_ldap_sasl_user_search_attr":          "string",
+		"authentication_ldap_simple_auth_method_name":        "string",
+		"authentication_ldap_simple_bind_base_dn":            "string",
+		"authentication_ldap_simple_bind_root_dn":            "string",
+		"authentication_ldap_simple_bind_root_pwd":           "string",
+		"authentication_ldap_simple_ca_path":                 "string",
+		"authentication_ldap_simple_group_search_attr":       "string",
+		"authentication_ldap_simple_group_search_filter":     "string",
+		"authentication_ldap_simple_init_pool_size":          "integer",
+		"authentication_ldap_simple_log_status":              "integer",
+		"authentication_ldap_simple_max_pool_size":           "integer",
+		"authentication_ldap_simple_server_host":             "string",
+		"authentication_ldap_simple_server_port":             "integer",
+		"authentication_ldap_simple_tls":                     "boolean",
+		"authentication_ldap_simple_user_search_attr":        "string",
+		"auto_increment_increment":                           "integer",
+		"auto_increment_offset":                              "integer",
+		"autocommit":                                         "boolean",
+		"automatic_sp_privileges":                            "boolean",
+		"avoid_temporal_upgrade":                             "boolean",
+		"big_tables":                                         "boolean",
+		"binlog_cache_size":                                  "integer",
+		"binlog_checksum":                                    "string",
+		"binlog_direct_non_transactional_updates":            "boolean",
+		"binlog_error_action":                                "enumeration",
+		"binlog_format":                                      "enumeration",
+		"binlog_group_commit_sync_delay":                     "integer",
+		"binlog_group_commit_sync_no_delay_count":            "integer",
+		"binlog_max_flush_queue_time":                        "integer",
+		"binlog_order_commits":                               "boolean",
+		"binlog_row_image=image_type":                        "enumeration",
+		"binlog_rows_query_log_events":                       "boolean",
+		"binlog_stmt_cache_size":                             "integer",
+		"binlogging_impossible_mode":                         "enumeration",
+		"block_encryption_mode":                              "string",
+		"bulk_insert_buffer_size":                            "integer",
+		"character_set_client":                               "string",
+		"character_set_connection":                           "string",
+		"character_set_database":                             "string",
+		"character_set_filesystem":                           "string",
+		"character_set_results":                              "string",
+		"character_set_server":                               "string",
+		"check_proxy_users":                                  "boolean",
+		"collation_connection":                               "string",
+		"collation_database":                                 "string",
+		"collation_server":                                   "string",
+		"completion_type":                                    "enumeration",
+		"concurrent_insert":                                  "enumeration",
+		"connect_timeout":                                    "integer",
+		"connection_control_failed_connections_threshold":    "integer",
+		"connection_control_max_connection_delay":            "integer",
+		"connection_control_min_connection_delay":            "integer",
+		"default_password_lifetime":                          "integer",
+		"default_storage_engine":                             "enumeration",
+		"default_tmp_storage_engine":                         "enumeration",
+		"default_week_format":                                "integer",
+		"delay_key_write":                                    "enumeration",
+		"delayed_insert_limit":                               "integer",
+		"delayed_insert_timeout":                             "integer",
+		"delayed_queue_size":                                 "integer",
+		"div_precision_increment":                            "integer",
+		"end_markers_in_json":                                "boolean",
+		"enforce_gtid_consistency":                           "enumeration",
+		"eq_range_index_dive_limit":                          "integer",
+		"event_scheduler":                                    "enumeration",
+		"executed_gtids_compression_period":                  "integer",
+		"expire_logs_days":                                   "integer",
+		"explicit_defaults_for_timestamp":                    "boolean",
 		"flush":                                              "boolean",
 		"flush_time":                                         "integer",
 		"foreign_key_checks":                                 "boolean",
@@ -514,7 +513,7 @@ func ShowVariables(db *sql.DB) ([]Variable, error) {
 
 	rows, err := db.Query(StmtShowVariables)
 	if err != nil {
-		return []Variable{}, errors.Trace(err)
+		return []Variable{}, err
 	}
 
 	for rows.Next() {
@@ -549,14 +548,14 @@ func SetDynamicVariables(db *sql.DB, variable_name string, variable_value string
 
 	varvalue, ok := GlobalDynamicVars[variable_name]
 	if !ok {
-		return errors.NotFoundf(variable_name)
+		return errors.New(fmt.Sprintf("Not found: %s", variable_name))
 	}
 
 	switch {
 	case varvalue == "integer":
 		_, err := strconv.Atoi(variable_value)
 		if err != nil {
-			return errors.NewNotValid(err, variable_value)
+			return err
 		}
 		Query = fmt.Sprintf(StmtSetIntegerDynamicVariables, variable_name, variable_value)
 	case varvalue == "boolean":
@@ -566,7 +565,7 @@ func SetDynamicVariables(db *sql.DB, variable_name string, variable_value string
 		case variable_value == "OFF" || variable_value == "False" || variable_value == "false" || variable_value == "FALSE" || variable_value == "off" || variable_value == "Off" || variable_value == "0":
 			Query = fmt.Sprintf(StmtSetStringDynamicVariables, variable_name, "OFF")
 		default:
-			return errors.NotValidf("%s", variable_value)
+			return errors.New(fmt.Sprintf("Not valid: %s", variable_value))
 		}
 	default:
 		Query = fmt.Sprintf(StmtSetStringDynamicVariables, variable_name, variable_value)
@@ -574,7 +573,7 @@ func SetDynamicVariables(db *sql.DB, variable_name string, variable_value string
 
 	_, err := db.Exec(Query)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	return nil
 }

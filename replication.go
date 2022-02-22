@@ -1,11 +1,10 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"database/sql"
 	"fmt"
 	"strings"
-
-	"github.com/juju/errors"
+	//"github.com/juju/errors"
 )
 
 type (
@@ -248,11 +247,11 @@ func (slave *Slave) ChangeMaster(db *sql.DB) error {
 	}
 
 	if len(slave.MasterSSLCrlpath) != 0 {
-		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.SetMasterSSLKey))
+		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.MasterSSLKey))
 	}
 
 	if len(slave.MasterSSLKey) != 0 {
-		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.SetMasterSSLKey))
+		args = append(args, fmt.Sprintf("MASTER_SSL_KEY='%s'", slave.MasterSSLKey))
 	}
 
 	if len(slave.MasterSSLCipher) != 0 {
@@ -275,7 +274,7 @@ func (slave *Slave) ChangeMaster(db *sql.DB) error {
 
 	_, err := db.Exec(ChangeMaster)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	return nil
 }

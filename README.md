@@ -19,7 +19,7 @@ A MySQL Go Library.
 
 Simple install the package to your $GOPATH with the go tool from shell:
 
-    # go get -u github.com/imSQL/imSQL
+    # go get -u github.com/qwerty2586/go_mysql/mysqlmanage
 
 Make sure git command is installed on your OS.
 

@@ -1,4 +1,4 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"os"

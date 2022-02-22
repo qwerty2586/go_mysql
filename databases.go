@@ -1,10 +1,8 @@
-package imSQL
+package mysqlmanage
 
 import (
 	"database/sql"
 	"fmt"
-
-	"github.com/juju/errors"
 )
 
 type (
@@ -57,7 +55,7 @@ func (dbi *DB) CreateOneDB(db *sql.DB) error {
 	Query := fmt.Sprintf(StmtCreateOneDatabase, dbi.Name)
 	_, err := db.Exec(Query)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 
 	return nil
@@ -71,7 +69,7 @@ func (dbi *DB) DropOneDB(db *sql.DB) error {
 	Query := fmt.Sprintf(StmtDropOneDatabase, dbi.Name)
 	_, err := db.Exec(Query)
 	if err != nil {
-		return errors.Trace(err)
+		return err
 	}
 	return nil
 }
