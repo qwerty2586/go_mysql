@@ -53,6 +53,9 @@ Create one database.
 func (dbi *DB) CreateOneDB(db *sql.DB) error {
 
 	Query := fmt.Sprintf(StmtCreateOneDatabase, dbi.Name)
+
+	debug(Query)
+
 	_, err := db.Exec(Query)
 	if err != nil {
 		return err
@@ -67,6 +70,9 @@ Drop one databases.
 func (dbi *DB) DropOneDB(db *sql.DB) error {
 
 	Query := fmt.Sprintf(StmtDropOneDatabase, dbi.Name)
+
+	debug(Query)
+
 	_, err := db.Exec(Query)
 	if err != nil {
 		return err

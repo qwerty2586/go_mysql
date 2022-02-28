@@ -2,26 +2,33 @@ package mysqlmanage
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
 type (
 	Users struct {
-		Host                 string   `json:"host" db:"host"`
-		User                 string   `json:"username" db:"user"`
-		Active               uint64   `json:"active" db:"active"`
-		DefaultSchema        string   `json:"default_schema" db:"default_schema"`
-		MaxQuestions         uint64   `json:"max_questions" db:"max_questions"`
-		MaxUpdates           uint64   `json:"max_updates" db:"max_updates"`
-		MaxConnections       uint64   `json:"max_connections" db:"max_connections"`
-		MaxUserConnections   uint64   `json:"max_user_connections" db:"max_user_connections"`
-		Plugin               string   `json:"plugin" db"plugin"`
-		AuthenticationString string   `json:"password" db:"authentication_string"`
-		PasswordExpired      string   `json:"password_expired" db:"password_expired"`
-		PasswordLifetime     uint64   `json:"password_lifetime" db:"password_lifetime"`
-		AccountLocked        string   `json:"account_locked" db:"account_locked"`
-		Privileges           []string `json:"privileges" db:"privileges"`
+		Host                 string  `json:"host" db:"host"`
+		User                 string  `json:"username" db:"user"`
+		Active               uint64  `json:"active" db:"active"`
+		DefaultSchema        string  `json:"default_schema" db:"default_schema"`
+		MaxQuestions         uint64  `json:"max_questions" db:"max_questions"`
+		MaxUpdates           uint64  `json:"max_updates" db:"max_updates"`
+		MaxConnections       uint64  `json:"max_connections" db:"max_connections"`
+		MaxUserConnections   uint64  `json:"max_user_connections" db:"max_user_connections"`
+		Plugin               string  `json:"plugin" db"plugin"`
+		AuthenticationString string  `json:"password" db:"authentication_string"`
+		PasswordExpired      string  `json:"password_expired" db:"password_expired"`
+		PasswordLifetime     uint64  `json:"password_lifetime" db:"password_lifetime"`
+		AccountLocked        string  `json:"account_locked" db:"account_locked"`
+		Grants               []Grant `json:"privileges"`
+	}
+
+	Grant struct {
+		Privileges []string
+		Object     string
 	}
 )
 
@@ -104,7 +111,15 @@ const (
 	FLUSH PRIVILEGES
 	`
 	StmtGrantPrivileges = `
-	GRANT %s ON %s.* TO '%s'@'%s'
+	GRANT %s ON %s TO '%s'@'%s'
+	`
+	StmtShowGrants = `
+	SHOW GRANTS FOR '%s'@'%s'
+	`
+	RegexGrant = `GRANT\s(?P<privs>.*)\sON\s(?P<object>.*)\sTO\s(?P<user>.*)`
+
+	StmtRevokeAllForUser = `
+	REVOKE ALL PRIVILEGES, GRANT OPTION FROM '%s'@'%s'
 	`
 )
 
@@ -120,7 +135,7 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.User = username
 	newuser.AuthenticationString = password
 
-	newuser.DefaultSchema = "information_schema"
+	//newuser.DefaultSchema = "information_schema"
 	newuser.MaxQuestions = 0
 	newuser.MaxUpdates = 0
 	newuser.MaxConnections = 0
@@ -129,7 +144,7 @@ func NewUser(username string, password string, addr string) (*Users, error) {
 	newuser.PasswordExpired = "N"
 	newuser.PasswordLifetime = 0
 	newuser.AccountLocked = "N"
-	newuser.Privileges = []string{"ALL PRIVILEGES"}
+	newuser.Grants = make([]Grant, 0)
 
 	return newuser, nil
 }
@@ -192,8 +207,8 @@ func (user *Users) SetPasswordExipred(password_expired string) {
 /*
 lock/unlock user account.
 */
-func (user *Users) SetAccountLocked(active uint64) {
-	if active == 0 {
+func (user *Users) SetAccountLocked(locked bool) {
+	if locked {
 		user.AccountLocked = "Y"
 	} else {
 		user.AccountLocked = "N"
@@ -203,16 +218,16 @@ func (user *Users) SetAccountLocked(active uint64) {
 /*
 add user's privileges
 */
-func (user *Users) AddPrivileges(privileges ...string) {
-	if len(privileges) != 0 {
-		if user.Privileges[0] == "ALL PRIVILEGES" {
-			user.Privileges = []string{}
-			user.Privileges = append(user.Privileges, privileges...)
-		} else {
-			user.Privileges = append(user.Privileges, privileges...)
-		}
-	}
-}
+//func (user *Users) AddPrivileges(privileges ...string) {
+//	if len(privileges) != 0 {
+//		if user.Privileges[0] == "ALL PRIVILEGES" {
+//			user.Privileges = []string{}
+//			user.Privileges = append(user.Privileges, privileges...)
+//		} else {
+//			user.Privileges = append(user.Privileges, privileges...)
+//		}
+//	}
+//}
 
 /*
 set user't default schema.
@@ -221,7 +236,7 @@ func (user *Users) SetDefaultSchema(default_schema string) {
 	user.DefaultSchema = default_schema
 }
 
-/*
+/*StmtShowGrants
 add one user.
 */
 func (user *Users) AddOneUser(db *sql.DB) error {
@@ -254,25 +269,117 @@ func (user *Users) AddOneUser(db *sql.DB) error {
 	//Query Stmt.
 	Query := fmt.Sprintf(StmtAddOneUser, user.User, user.Host, user.AuthenticationString, user.MaxQuestions, user.MaxUpdates, user.MaxConnections, user.MaxUserConnections, password_option, lock_option)
 
+	debug(Query)
+
 	_, err := db.Exec(Query)
 	if err != nil {
 		return err
 	}
 
-	PrivList := strings.Join(user.Privileges, ",")
-	GrantQuery := fmt.Sprintf(StmtGrantPrivileges, PrivList, user.DefaultSchema, user.User, user.Host)
-
-	_, err = db.Exec(GrantQuery)
-	if err != nil {
-		return err
-	}
+	// no pushing privileges here
 
 	_, err = db.Exec(StmtFlushPrivileges)
 	if err != nil {
 		return err
 	}
 	return nil
+}
 
+/*
+pull privileges from db to model...
+*/
+func (user *Users) PullGrants(db *sql.DB) error {
+	Query := fmt.Sprintf(StmtShowGrants, user.User, user.Host)
+
+	debug(Query)
+
+	rows, err := db.Query(Query)
+	if err != nil {
+		return err
+	}
+
+	user.Grants = make([]Grant, 0)
+	for rows.Next() {
+		var grant_string = ""
+		err = rows.Scan(&grant_string)
+		if err != nil {
+			return err
+		}
+		r := regexp.MustCompile(RegexGrant)
+		finds := r.FindStringSubmatch(grant_string)
+		if len(finds) == 0 {
+			return errors.New("Failed parsing grants")
+		}
+		privs := strings.Split(finds[1], ",")
+		for i, _ := range privs {
+			privs[i] = strings.TrimSpace(privs[i])
+		}
+		object := finds[2]
+		user.Grants = append(user.Grants, Grant{
+			Privileges: privs,
+			Object:     object,
+		})
+	}
+	return nil
+}
+
+/*
+push privileges from model to db...
+cleanBefore revoke all privileges before granting
+*/
+func (user *Users) PushGrants(db *sql.DB, cleanBefore bool) error {
+	TX, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer TX.Rollback()
+
+	if cleanBefore {
+		RevokeQuery := fmt.Sprintf(StmtRevokeAllForUser, user.User, user.Host)
+
+		debug(RevokeQuery)
+
+		_, err := TX.Exec(RevokeQuery)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, grant := range user.Grants {
+		privs := strings.Join(grant.Privileges, ",")
+		Query := fmt.Sprintf(StmtGrantPrivileges, privs, grant.Object, user.User, user.Host)
+
+		debug(Query)
+
+		_, err := TX.Exec(Query)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = TX.Exec(StmtFlushPrivileges)
+	if err != nil {
+		return err
+	}
+
+	err = TX.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
+add grants genrated from datbase object...
+*/
+func (user *Users) AddGrantsForDB(d *DB, privs []string) error {
+	object := fmt.Sprintf("%s.*", d.Name)
+	user.Grants = append(user.Grants, Grant{
+		Privileges: privs,
+		Object:     object,
+	})
+	return nil
 }
 
 /*
@@ -308,6 +415,8 @@ func (user *Users) UpdateOneUser(db *sql.DB) error {
 	// Query Stmt.
 	Query := fmt.Sprintf(StmtUpdateOneUser, user.User, user.Host, user.AuthenticationString, user.MaxQuestions, user.MaxUpdates, user.MaxConnections, user.MaxUserConnections, password_option, lock_option)
 
+	debug(Query)
+
 	_, err := db.Exec(Query)
 	if err != nil {
 		return err
@@ -322,6 +431,8 @@ drop user.
 func (user *Users) DeleteOneUser(db *sql.DB) error {
 
 	Query := fmt.Sprintf(StmtDeleteOneUser, user.User, user.Host)
+
+	debug(Query)
 
 	_, err := db.Exec(Query)
 	if err != nil {
@@ -338,6 +449,8 @@ func (user *Users) FindOneUserInfo(db *sql.DB) (Users, error) {
 
 	var tmpuser Users
 	Query := fmt.Sprintf(StmtQueryOneUserInfo, user.User, user.Host)
+
+	debug(Query)
 
 	rows, err := db.Query(Query)
 	if err != nil {
@@ -377,6 +490,8 @@ func FindAllUserInfo(db *sql.DB, limit uint64, skip uint64) ([]Users, error) {
 	var allusers []Users
 
 	Query := fmt.Sprintf(StmtQueryAllUsersInfo, limit, skip)
+
+	debug(Query)
 
 	rows, err := db.Query(Query)
 	if err != nil {
