@@ -1,4 +1,4 @@
-module github.com/qwerty2586/go_mysql/mysqlmanage
+module github.com/qwerty2586/go_mysql
 
 go 1.7
 
